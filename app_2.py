@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import scrolledtext, messagebox
 import subprocess
 import os
+import sys
 
 class MainApp:
     def __init__(self, root):
@@ -28,23 +29,38 @@ class MainApp:
         self.test_output.pack(pady=10)
 
     def load_code(self):
-        with open('execute/main.py', 'r', encoding='utf-8') as file:
+        with open('src/main.py', 'r', encoding='utf-8') as file:
             code = file.read()
             self.text_area.insert(tk.END, code)
 
     def save_code(self):
         new_code = self.text_area.get("1.0", tk.END)
-        with open('execute/main.py', 'w', encoding='utf-8') as file:
+        with open('src/main.py', 'w', encoding='utf-8') as file:
             file.write(new_code)
         messagebox.showinfo("Info", "Code saved successfully!")
 
     def run_tests(self):
-        result = subprocess.run(['pytest', '-s', 'test/'], capture_output=True, text=True)
-        self.test_output.delete("1.0", tk.END)
-        self.test_output.insert(tk.END, result.stdout)
+        try:
+            # Set the current working directory to the project root
+            cwd = os.path.dirname(os.path.abspath(__file__))
+            
+            # Construct the command to run pytest within the virtual environment
+            if os.name == 'nt':  # Windows
+                activate_script = os.path.join(cwd, 'venv', 'Scripts', 'activate.bat')
+                command = f'cmd.exe /C "{activate_script} && pytest -s tests/"'
+            else:  # macOS/Linux
+                activate_script = os.path.join(cwd, 'venv', 'bin', 'activate')
+                command = f'bash -c "source {activate_script} && pytest -s tests/"'
+            
+            result = subprocess.run(command, shell=True, capture_output=True, text=True, cwd=cwd)
+            self.test_output.delete("1.0", tk.END)
+            self.test_output.insert(tk.END, result.stdout)
+        except FileNotFoundError as e:
+            messagebox.showerror("Error", f"File not found: {e}")
+        except Exception as e:
+            messagebox.showerror("Error", f"An error occurred: {e}")
 
 if __name__ == "__main__":
     root = tk.Tk()
     app = MainApp(root)
     root.mainloop()
-
