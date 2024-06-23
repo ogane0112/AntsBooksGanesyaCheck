@@ -33,17 +33,26 @@ class MainApp:
             self.text_area.insert(tk.END, code)
 
     def save_code(self):
+        
         new_code = self.text_area.get("1.0", tk.END)
         with open('execute/main.py', 'w', encoding='utf-8') as file:
             file.write(new_code)
         messagebox.showinfo("Info", "Code saved successfully!")
 
     def run_tests(self):
-        result = subprocess.run(['pytest', '-s', 'test/'], capture_output=True, text=True)
+        
+        cwd = os.path.dirname(os.path.abspath(__file__))
+
+            # Use a batch script to activate the virtual environment and run pytest
+        command = 'cmd.exe /C "venv\\Scripts\\activate.bat && pytest -s test/ && venv\\Scripts\\deactivate.bat"'
+        result = subprocess.run(command, capture_output=True, text=True, cwd=cwd, shell=True)
+        
         self.test_output.delete("1.0", tk.END)
         self.test_output.insert(tk.END, result.stdout)
 
 if __name__ == "__main__":
+    
+    
     root = tk.Tk()
     app = MainApp(root)
     root.mainloop()
